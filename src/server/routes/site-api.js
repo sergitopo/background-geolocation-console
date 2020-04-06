@@ -34,7 +34,7 @@ router.get('/company_tokens', async function (req, res) {
 /**
  * GET /devices
  */
-router.get('/devices', async function (req, res) {
+/* router.get('/devices', async function (req, res) {
   try {
     const devices = await getDevices(req.query);
     res.send(devices);
@@ -53,7 +53,7 @@ router.delete('/devices/:id', async function (req, res) {
     console.error('/devices', JSON.stringify(req.params), JSON.stringify(req.query), err);
     res.status(500).send({ error: 'Something failed!' });
   }
-});
+}); */
 
 router.get('/stats', async function (req, res) {
   try {
@@ -65,7 +65,7 @@ router.get('/stats', async function (req, res) {
   }
 });
 
-router.get('/locations/latest', async function (req, res) {
+/* router.get('/locations/latest', async function (req, res) {
   console.log('GET /locations %s'.green, JSON.stringify(req.query));
   try {
     const latest = await getLatestLocation(req.query);
@@ -74,12 +74,12 @@ router.get('/locations/latest', async function (req, res) {
     console.info('/locations/latest', JSON.stringify(req.query), err);
     res.status(500).send({ error: 'Something failed!' });
   }
-});
+}); */
 
 /**
  * GET /locations
  */
-router.get('/locations', async function (req, res) {
+/* router.get('/locations', async function (req, res) {
   console.log('GET /locations %s'.green, JSON.stringify(req.query));
 
   try {
@@ -89,7 +89,7 @@ router.get('/locations', async function (req, res) {
     console.info('get /locations', JSON.stringify(req.query), err);
     res.status(500).send({ error: 'Something failed!' });
   }
-});
+}); */
 
 /**
  * POST /locations
@@ -148,7 +148,7 @@ router.post('/locations/:company_token', async function (req, res) {
   }
 });
 
-router.delete('/locations', async function (req, res) {
+/* router.delete('/locations', async function (req, res) {
   console.info('locations:delete:query'.green, JSON.stringify(req.query));
 
   try {
@@ -160,7 +160,7 @@ router.delete('/locations', async function (req, res) {
     console.info('delete /locations', JSON.stringify(req.query), err);
     res.status(500).send({ error: 'Something failed!' });
   }
-});
+}); */
 
 router.post('/locations_template', async function (req, res) {
   console.log('POST /locations_template\n%s\n'.green, JSON.stringify(req.body));
@@ -183,11 +183,11 @@ router.post('/configure', async function (req, res) {
 /**
  * Fetch iOS simulator city_drive route
  */
-router.get('/data/city_drive', async function (req, res) {
+/* router.get('/data/city_drive', async function (req, res) {
   console.log('GET /data/city_drive.json'.green);
   fs.readFile('./data/city_drive.json', 'utf8', function (_err, data) {
     res.send(data);
   });
-});
+}); */
 
 export default router;

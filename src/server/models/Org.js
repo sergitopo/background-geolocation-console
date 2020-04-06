@@ -1,36 +1,23 @@
-import {
-  isAdmin,
-  filterByCompany,
-} from '../libs/utils';
+import { isAdmin, desc } from '../libs/utils';
 import CompanyModel from '../database/CompanyModel';
-import { desc } from '../libs/utils';
 
 export async function getOrgs ({ company_token: org }) {
-  if (!filterByCompany) {
-    return [
-      {
-        id: 1,
-        company_token: 'bogus',
-      },
-    ];
-  }
+
   const whereConditions = isAdmin(org) ? {} : { company_token: org };
   const result = await CompanyModel.findAll({
     where: whereConditions,
-    attributes: ['id', 'company_token'],
     order: [['updated_at', desc]],
     raw: true,
-
   });
   return result;
 }
 
-export async function findOrCreate ({ company_token: org }) {
+export async function findOrCreate (companyObj) {
   const now = new Date();
   const [company] = await CompanyModel.findOrCreate({
-    where: { company_token: org },
-    defaults: { created_at: now, company_token: org, updated_at: now },
+    where: { company_token: companyObj.company_token },
+    defaults: { created_at: now, updated_at: now, ...companyObj },
     raw: true,
   });
   return company;
-};
+}

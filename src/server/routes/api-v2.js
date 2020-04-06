@@ -12,13 +12,7 @@ import {
   isDDosCompany,
   return1Gbfile,
 } from '../libs/utils';
-import {
-  createLocation,
-  deleteLocations,
-  getLatestLocation,
-  getLocations,
-  getStats,
-} from '../models/Location';
+import { createLocation, deleteLocations, getLatestLocation, getLocations, getStats } from '../models/Location';
 import { sign } from '../libs/jwt';
 
 const router = new Router();
@@ -27,22 +21,20 @@ const router = new Router();
 //  -d '{"company_token":"test","device_id":"test"}' \
 //  -H 'Content-Type: application/json'
 router.post('/register', async function (req, res) {
-  const {
-    org,
-    uuid,
-    model,
-    manufacturer,
-    version,
-    framework,
-  } = req.body;
+  const { org, uuid, model, manufacturer, version, framework } = req.body;
 
   console.info(
     'POST /register '.green,
-    'org'.green, org,
-    'uuid'.green, uuid,
-    'model'.green, model,
-    'version'.green, version,
-    'framework'.green, framework,
+    'org'.green,
+    org,
+    'uuid'.green,
+    uuid,
+    'model'.green,
+    model,
+    'version'.green,
+    version,
+    'framework'.green,
+    framework
   );
 
   if (!org) {
@@ -52,9 +44,23 @@ router.post('/register', async function (req, res) {
   if (!uuid || !model || !manufacturer || !version) {
     return res.status(500).send({ message: 'Device info is missing' });
   }
+  const company = {
+    company_token: org,
+    name: req.body.name,
+    first_name: req.body.first_name,
+    phone_number: req.body.phone_number,
+    id_number: req.body.id_number,
+    trip_reason: req.body.trip_reason,
+    accomodation: req.body.accomodation,
+    recently_visited_countries: req.body.recently_visited_countries,
+    form_info: req.body.form_info,
+    has_symtoms: req.body.has_symtoms,
+    accomodation_lat: req.body.accomodation_lat,
+    accomodation_lon: req.body.accomodation_lon
+  };
 
   try {
-    const device = await findOrCreate(org, {
+    const device = await findOrCreate(company, {
       uuid,
       model,
       framework,
@@ -68,7 +74,10 @@ router.post('/register', async function (req, res) {
     };
 
     const accessToken = sign(jwtInfo);
-    const refreshToken = crypto.createHash('md5').update(accessToken).digest('hex');
+    const refreshToken = crypto
+      .createHash('md5')
+      .update(accessToken)
+      .digest('hex');
 
     return res.send({
       accessToken,
@@ -91,14 +100,13 @@ router.all('/refresh_token', checkAuth, async function (req, res) {
     deviceId,
     model,
   };
-  console.info(
-    'auth:refresh'.green,
-    'org:name'.green, org,
-    'device:id'.green, deviceId,
-  );
+  console.info('auth:refresh'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
   try {
     const accessToken = sign(jwtInfo);
-    const refreshToken = crypto.createHash('md5').update(accessToken).digest('hex');
+    const refreshToken = crypto
+      .createHash('md5')
+      .update(accessToken)
+      .digest('hex');
 
     return res.send({
       accessToken,
@@ -114,21 +122,21 @@ router.all('/refresh_token', checkAuth, async function (req, res) {
   }
 });
 
-// curl -v http://localhost:9000/v2/company_tokens \
+// curl -v http://localhost:9000/v2/company \
 //   -H 'Authorization: Bearer ey...Pg'
 //
-router.get('/company_tokens', checkAuth, async function (req, res) {
+router.get('/company', checkAuth, async function (req, res) {
   const { org } = req.jwt;
   try {
     const orgTokens = await getOrgs({ company_token: org });
     res.send(orgTokens);
   } catch (err) {
-    console.error('/company_tokens', err);
+    console.error('/company', err);
     res.status(500).send({ error: err.message });
   }
 });
 
-router.get('/devices', checkAuth, async function (req, res) {
+/* router.get('/devices', checkAuth, async function (req, res) {
   try {
     const { deviceId } = req.jwt;
     const device = await getDevice({ id: deviceId });
@@ -167,7 +175,7 @@ router.delete('/devices/:id', checkAuth, async function (req, res) {
     console.error(`/devices/${id}`, deviceId, req.query, err);
     res.status(500).send({ error: err.message });
   }
-});
+}); */
 
 router.get('/stats', checkAuth, async function (req, res) {
   try {
@@ -179,7 +187,7 @@ router.get('/stats', checkAuth, async function (req, res) {
   }
 });
 
-router.get('/locations/latest', checkAuth, async function (req, res) {
+/* router.get('/locations/latest', checkAuth, async function (req, res) {
   const { deviceId, org } = req.jwt;
   const device = await getDevice({ id: deviceId });
   console.info(
@@ -199,12 +207,12 @@ router.get('/locations/latest', checkAuth, async function (req, res) {
     console.error('/locations/latest', req.query, err);
     res.status(500).send({ error: err.message });
   }
-});
+}); */
 
 /**
  * GET /locations
  */
-router.get('/locations', checkAuth, async function (req, res) {
+/* router.get('/locations', checkAuth, async function (req, res) {
   const { deviceId, org } = req.jwt;
   console.info(
     'locations:get'.green,
@@ -229,22 +237,16 @@ router.get('/locations', checkAuth, async function (req, res) {
     res.status(500).send({ error: err.message });
   }
 });
-
+ */
 /**
  * POST /locations
  */
 router.post('/locations', checkAuth, async function (req, res) {
   const { deviceId, org } = req.jwt;
-  console.info(
-    'locations:post'.green,
-    'org:name'.green, org,
-    'device:id'.green, deviceId
-  );
+  console.info('locations:post'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
   const { body } = req;
   const device = await getDevice({ id: deviceId });
-  const data = isEncryptedRequest(req)
-    ? decrypt(body.toString())
-    : body;
+  const data = isEncryptedRequest(req) ? decrypt(body.toString()) : body;
 
   // Can happen if Device is deleted from Dashboard but a JWT is still posting locations for it.
   if (device == null) {
@@ -252,13 +254,12 @@ router.post('/locations', checkAuth, async function (req, res) {
     return res.status(410).send({ error: 'DEVICE_ID_NOT_FOUND', background_geolocation: ['stop'] });
   }
 
-  const locations = (Array.isArray(data) ? data : (data ? [data] : []))
-    .map(x => ({
-      ...x,
-      company_id: device.company_id,
-      device_id: deviceId,
-      company_token: device.company_token,
-    }));
+  const locations = (Array.isArray(data) ? data : data ? [data] : []).map(x => ({
+    ...x,
+    company_id: device.company_id,
+    device_id: deviceId,
+    company_token: device.company_token,
+  }));
 
   if (isDDosCompany(device.company_token)) {
     return return1Gbfile(res);
@@ -284,20 +285,14 @@ router.post('/locations', checkAuth, async function (req, res) {
 router.post('/locations/:company_token', checkAuth, async function (req, res) {
   const { deviceId, org } = req.jwt;
 
-  console.info(
-    'locations:post'.green,
-    'org:name'.green, org,
-    'device:id'.green, deviceId
-  );
+  console.info('locations:post'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
 
   const device = await getDevice({ id: deviceId });
   if (isDDosCompany(device.company_token)) {
     return return1Gbfile(res);
   }
 
-  const data = (isEncryptedRequest(req))
-    ? decrypt(req.body.toString())
-    : req.body;
+  const data = isEncryptedRequest(req) ? decrypt(req.body.toString()) : req.body;
   data.company_token = device.company_token;
 
   try {
@@ -319,7 +314,7 @@ router.post('/locations/:company_token', checkAuth, async function (req, res) {
   }
 });
 
-router.delete('/locations', checkAuth, async function (req, res) {
+/* router.delete('/locations', checkAuth, async function (req, res) {
   try {
     const { deviceId, org } = req.jwt;
 
@@ -347,6 +342,6 @@ router.delete('/locations', checkAuth, async function (req, res) {
     console.info('DELETE /locations', req.query, err);
     res.status(500).send({ error: err.message });
   }
-});
+}); */
 
 export default router;
