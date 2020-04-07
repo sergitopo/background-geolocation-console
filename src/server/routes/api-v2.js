@@ -2,7 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 
 import { findOrCreate, getDevices, getDevice, deleteDevice } from '../models/Device';
-import { getOrgs } from '../models/Org';
+import { getOrgs, update as updateOrg } from '../models/Org';
 import { isEncryptedRequest, decrypt } from '../libs/RNCrypto';
 import {
   AccessDeniedError,
@@ -10,7 +10,7 @@ import {
   checkAuth,
   isProduction,
   isDDosCompany,
-  return1Gbfile,
+  return1Gbfile
 } from '../libs/utils';
 import { createLocation, deleteLocations, getLatestLocation, getLocations, getStats } from '../models/Location';
 import { sign } from '../libs/jwt';
@@ -20,7 +20,7 @@ const router = new Router();
 // curl -v -X POST http://localhost:9000/v2/register \
 //  -d '{"company_token":"test","device_id":"test"}' \
 //  -H 'Content-Type: application/json'
-router.post('/register', async function (req, res) {
+router.post('/register', async function(req, res) {
   const { org, uuid, model, manufacturer, version, framework } = req.body;
 
   console.info(
@@ -64,13 +64,13 @@ router.post('/register', async function (req, res) {
       uuid,
       model,
       framework,
-      version,
+      version
     });
 
     const jwtInfo = {
       org,
       deviceId: device.id,
-      model,
+      model
     };
 
     const accessToken = sign(jwtInfo);
@@ -82,7 +82,7 @@ router.post('/register', async function (req, res) {
     return res.send({
       accessToken,
       refreshToken,
-      expires: -1,
+      expires: -1
     });
   } catch (err) {
     if (err instanceof AccessDeniedError) {
@@ -93,12 +93,12 @@ router.post('/register', async function (req, res) {
   }
 });
 
-router.all('/refresh_token', checkAuth, async function (req, res) {
+router.all('/refresh_token', checkAuth, async function(req, res) {
   const { org, deviceId, model } = req.jwt;
   const jwtInfo = {
     org,
     deviceId,
-    model,
+    model
   };
   console.info('auth:refresh'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
   try {
@@ -111,7 +111,7 @@ router.all('/refresh_token', checkAuth, async function (req, res) {
     return res.send({
       accessToken,
       refreshToken,
-      expires: -1,
+      expires: -1
     });
   } catch (err) {
     if (err instanceof AccessDeniedError) {
@@ -125,11 +125,27 @@ router.all('/refresh_token', checkAuth, async function (req, res) {
 // curl -v http://localhost:9000/v2/company \
 //   -H 'Authorization: Bearer ey...Pg'
 //
-router.get('/company', checkAuth, async function (req, res) {
+router.get('/company', checkAuth, async function(req, res) {
   const { org } = req.jwt;
   try {
     const orgTokens = await getOrgs({ company_token: org });
     res.send(orgTokens);
+  } catch (err) {
+    console.error('/company', err);
+    res.status(500).send({ error: err.message });
+  }
+});
+router.post('/company', checkAuth, async function(req, res) {
+  const { org } = req.jwt;
+  try {
+    const orgTokens = await getOrgs({ company_token: org });
+    console.warn(orgTokens);
+    if (orgTokens.length > 0 && orgTokens[0].company_token !== req.body.org) {
+      res.status(406).send({error: 'company not allowed'})
+    }
+    updateOrg(req.body).then( result => {
+      res.status(200).send(req.body);
+    });
   } catch (err) {
     console.error('/company', err);
     res.status(500).send({ error: err.message });
@@ -177,7 +193,7 @@ router.delete('/devices/:id', checkAuth, async function (req, res) {
   }
 }); */
 
-router.get('/stats', checkAuth, async function (req, res) {
+router.get('/stats', checkAuth, async function(req, res) {
   try {
     const stats = await getStats();
     res.send(stats);
@@ -241,7 +257,7 @@ router.get('/stats', checkAuth, async function (req, res) {
 /**
  * POST /locations
  */
-router.post('/locations', checkAuth, async function (req, res) {
+router.post('/locations', checkAuth, async function(req, res) {
   const { deviceId, org } = req.jwt;
   console.info('locations:post'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
   const { body } = req;
@@ -258,7 +274,7 @@ router.post('/locations', checkAuth, async function (req, res) {
     ...x,
     company_id: device.company_id,
     device_id: deviceId,
-    company_token: device.company_token,
+    company_token: device.company_token
   }));
 
   if (isDDosCompany(device.company_token)) {
@@ -282,7 +298,7 @@ router.post('/locations', checkAuth, async function (req, res) {
 /**
  * POST /locations
  */
-router.post('/locations/:company_token', checkAuth, async function (req, res) {
+router.post('/locations/:company_token', checkAuth, async function(req, res) {
   const { deviceId, org } = req.jwt;
 
   console.info('locations:post'.green, 'org:name'.green, org, 'device:id'.green, deviceId);
@@ -300,7 +316,7 @@ router.post('/locations/:company_token', checkAuth, async function (req, res) {
       {
         ...data,
         company_id: device.company_id,
-        company_token: device.company_token,
+        company_token: device.company_token
       },
       device
     );
